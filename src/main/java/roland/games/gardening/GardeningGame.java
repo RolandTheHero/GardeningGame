@@ -22,6 +22,9 @@ public record GardeningGame(DataHandler data) {
         data.addToInventory(userid, foragedSeeds);
         return foragedSeeds;
     }
+    public Map<Seed, Integer> seedInventory(long userid) {
+        return data.getInventory(userid).getSeeds();
+    }
     public void plant(long userid, Seed seed) {
         if (data.getGarden(userid).isFull()) return;
         data.subtractFromInventory(userid, Map.of(seed, 1));
