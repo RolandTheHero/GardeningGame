@@ -21,5 +21,10 @@ public interface DataHandler {
         Map<Seed, Integer> inverted = seeds.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> -e.getValue()));
         addToInventory(userid, inverted);
     }
-    default public void addCooldown(long userid, String cooldownName, long length) { getCooldowns(userid).add(cooldownName, length); }
+    default public boolean addCooldown(long userid, String cooldownName, long length) {
+        return getCooldowns(userid).add(cooldownName, length);
+    }
+    default public long getCooldown(long userid, String name) {
+        return getCooldowns(userid).getEndTime(name);
+    }
 }
