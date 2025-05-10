@@ -1,7 +1,6 @@
+package roland.games.gardening;
 import java.util.HashMap;
 import java.util.Map;
-
-import roland.games.gardening.*;
 
 public class LocalDataHandler implements DataHandler {
     private Map<String, Plant> plants = new HashMap<>();
@@ -10,6 +9,7 @@ public class LocalDataHandler implements DataHandler {
     private Map<Long, Cooldowns> cooldowns = new HashMap<>();
     
     public void addUser(long userid) {
+        if (gardens.get(userid) != null) return; // User is already added
         gardens.put(userid, new Garden(3));
         inventories.put(userid, new Inventory());
         cooldowns.put(userid, new Cooldowns());

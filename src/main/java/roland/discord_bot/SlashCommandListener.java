@@ -1,5 +1,6 @@
 package roland.discord_bot;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.Nonnull;
@@ -8,15 +9,16 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
 public class SlashCommandListener extends ListenerAdapter {
-    private Map<String, SlashCommand> commands = null; // TODO
+    private final Map<String, SlashCommand> commands = new HashMap<>();
+
+    public SlashCommandListener(SlashCommand... commands) {
+        for (SlashCommand scmd : commands) this.commands.put(scmd.name(), scmd);
+    }
+
     @Override public void onSlashCommandInteraction(@Nonnull SlashCommandInteractionEvent event) {
         String eventName = event.getName();
-        if (eventName.equals("echo")) {
-            var op = event.getOption("message");
-            if (op == null) return;
-            event.reply(op.getAsString()).queue();
-        } else if (eventName.equals("forage")) {
-
-        }
+        SlashCommand scmd = commands.get(eventName);
+        if (scmd == null) throw new IllegalArgumentException("No such command: " + scmd);
+        scmd.run(event);
     }
 }

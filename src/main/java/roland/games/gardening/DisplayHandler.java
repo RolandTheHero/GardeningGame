@@ -2,18 +2,18 @@ package roland.games.gardening;
 
 import java.util.Map;
 
-public interface DisplayHandler {
-    public String forageSuccess(Map<Seed, Integer> foragedSeeds);
-    public String forageFailure(long timeAvailable);
-    public String inventory(Inventory inventory);
-    public String garden(Garden garden);
-    public String plantSeedNotEnoughFailure(Seed seed);
-    public String plantSeedGardenFullFailure();
-    public String plantSeedSuccess(Seed seed);
-    public String harvestNotReadyFailure(int plotNum);
-    public String harvestEmptyFailure(int plotNum);
-    public String harvestSuccess(Seed seed, Plant harvestedPlant);
-    public String plant(Plant plant);
-    public String plantNonExistentFailure(String code);
-    public String plants(long userid, Map<String, Plant> plants, int page);
+public interface DisplayHandler<T> {
+    public void forageSuccess(T cmdOrigin, Map<Seed, Integer> foragedSeeds);
+    public void forageFailure(T cmdOrigin, long timeAvailable);
+    public void inventory(T cmdOrigin, Inventory inventory);
+    public void garden(T cmdOrigin, Garden garden);
+    public void plantSeedNotEnoughFailure(T cmdOrigin, Seed seed);
+    public void plantSeedGardenFullFailure(T cmdOrigin);
+    public void plantSeedSuccess(T cmdOrigin, Seed seed);
+    public void harvestNotReadyFailure(T cmdOrigin, int plotNum);
+    public void harvestEmptyFailure(T cmdOrigin, int plotNum);
+    public void harvestSuccess(T cmdOrigin, Seed seed, Plant harvestedPlant);
+    public void plant(T cmdOrigin, Plant plant);
+    public void plantNonExistentFailure(T cmdOrigin, String code);
+    public void plants(T cmdOrigin, long userid, Map<String, Plant> plants, int page);
 }

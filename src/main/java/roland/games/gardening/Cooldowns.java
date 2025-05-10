@@ -15,5 +15,9 @@ public class Cooldowns {
         endTimes.put(name, Utility.currentTime() + length);
         return true;
     }
-    public boolean hasEnded(String name) { return Utility.currentTime() >= endTimes.get(name); }
+    public boolean hasEnded(String name) {
+        Long endTime = endTimes.get(name);
+        if (endTime == null) return true;
+        return Utility.currentTime() >= endTimes.get(name);
+    }
 }
