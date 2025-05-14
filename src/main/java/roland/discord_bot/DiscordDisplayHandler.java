@@ -6,6 +6,8 @@ import java.util.stream.Collectors;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder;
 import roland.games.gardening.DisplayHandler;
 import roland.games.gardening.Garden;
 import roland.games.gardening.Inventory;
@@ -47,42 +49,60 @@ public class DiscordDisplayHandler implements DisplayHandler<SlashCommandInterac
     }
 
     @Override
-    public void inventory(SlashCommandInteractionEvent cmdOrigin, Inventory inventory) {
+    public void inventory(SlashCommandInteractionEvent cmdOrigin, long userid, Inventory inventory) {
         String seedsMsgBox = inventory.getSeeds().entrySet().stream()
             .map(e -> ":beans: " + e.getValue() + " · " + e.getKey().fullName())
-            .collect(Collectors.joining("\n", "", ""));
-        if (inventory.getSeeds().isEmpty()) seedsMsgBox = "This user does not have any seeds.";
+            .collect(Collectors.joining("\n", "<@" + userid + ">'s seed inventory\n\n", ""));
+        if (inventory.getSeeds().isEmpty()) seedsMsgBox = "<@" + userid + "> does not have any seeds.";
         MessageEmbed embed = new EmbedBuilder()
             .setColor(Main.kaiboColor)
             .setTitle("Inventory")
-            //.appendDescription("<@" + )
             .appendDescription(seedsMsgBox)
             .build();
         cmdOrigin.replyEmbeds(embed).queue();
     }
 
     @Override
-    public void garden(SlashCommandInteractionEvent cmdOrigin, Garden garden) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'garden'");
+    public void garden(SlashCommandInteractionEvent cmdOrigin, long userid, Garden garden) {
+        var plots = garden.getPlots();
+        String gardenMsgBox = plots.stream()
+            .map(p -> ":seedling: " + p.seed().fullName() + " · Harvestable in <t:" + p.harvestableAt() + ":R>")
+            .collect(Collectors.joining("\n", "<@" + userid + ">'s garden\n\n", ""));
+        if (plots.isEmpty()) gardenMsgBox = "<@" + userid + "> has not planted any seeds.";
+        MessageEmbed embed = new EmbedBuilder()
+            .setColor(Main.kaiboColor)
+            .setTitle("Garden")
+            .appendDescription(gardenMsgBox)
+            .build();
+        Builder ssm = StringSelectMenu.create("menu:plantseed")
+            .setPlaceholder("Select seed to plant")
+            .setRequiredRange(1, 1);
+        Main.gardeningGame.data().getInventory(userid).getSeeds().entrySet().stream()
+            .filter(e -> e.getValue() > 0)
+            .forEach(e -> ssm.addOption(e.getKey().fullName() + " (Owned: " + e.getValue() + ")", e.getKey().codeName()));
+        var reply = cmdOrigin.replyEmbeds(embed);
+        if (!ssm.getOptions().isEmpty()) reply.addActionRow(ssm.build());
+        reply.queue();
+    }
+    
+    @Override
+    public void plantSeedNotExistentFailure(SlashCommandInteractionEvent cmdOrigin) {
+        cmdOrigin.reply("Please specify a valid seed.").queue();
     }
 
     @Override
     public void plantSeedNotEnoughFailure(SlashCommandInteractionEvent cmdOrigin, Seed seed) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'plantSeedNotEnoughFailure'");
+        cmdOrigin.reply("You need to have at least one " + seed.fullName() + " to plant it.").queue();
     }
 
     @Override
     public void plantSeedGardenFullFailure(SlashCommandInteractionEvent cmdOrigin) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'plantSeedGardenFullFailure'");
+        cmdOrigin.reply("You cannot plant anymore seeds in your garden — it's full!").queue();
     }
 
     @Override
     public void plantSeedSuccess(SlashCommandInteractionEvent cmdOrigin, Seed seed) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'plantSeedSuccess'");
+        cmdOrigin.reply("You planted a " + seed.fullName() + " in your garden.").queue();
     }
 
     @Override

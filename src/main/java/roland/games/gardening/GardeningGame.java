@@ -6,6 +6,9 @@ import java.util.Map;
 public record GardeningGame<T>(DataHandler data, DisplayHandler<T> display) {
     static final private double seedRareChance = 0.04d;
     static final private long forageCooldown = 600L; // Seconds
+    static final private Map<String, Seed> seedNames = Map.of("common", Seed.COMMON, "rare", Seed.RARE, "magical", Seed.MAGICAL);
+
+    public Seed getSeedFromString(String name) { return seedNames.get(name); }
 
     public void forage(T cmdOrigin, long userid) {
         data.addUser(userid);
@@ -30,10 +33,14 @@ public record GardeningGame<T>(DataHandler data, DisplayHandler<T> display) {
     }
     public void seedInventory(T cmdOrigin, long userid) {
         data.addUser(userid);
-        display.inventory(cmdOrigin, data.getInventory(userid));
+        display.inventory(cmdOrigin, userid, data.getInventory(userid));
     }
     public void plantSeed(T cmdOrigin, long userid, Seed seed) {
         data.addUser(userid);
+        if (seed == null) {
+            display.plantSeedNotExistentFailure(cmdOrigin);
+            return;
+        }
         if (data.getGarden(userid).isFull()) {
             display.plantSeedGardenFullFailure(cmdOrigin);
             return;
@@ -46,6 +53,11 @@ public record GardeningGame<T>(DataHandler data, DisplayHandler<T> display) {
         data.subtractFromInventory(userid, Map.of(seed, 1));
         data.getGarden(userid).plant(seed);
         display.plantSeedSuccess(cmdOrigin, seed);
+    }
+    public void plantSeed(T cmdOrigin, long userid, String seed) { plantSeed(cmdOrigin, userid, seedNames.get(seed)); }
+    public void viewGarden(T cmdOrigin, long userid) {
+        data.addUser(userid);
+        display.garden(cmdOrigin, userid, data.getGarden(userid));
     }
     public void harvest(T cmdOrigin, long userid, int plotNum) {
         data.addUser(userid);

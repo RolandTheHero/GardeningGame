@@ -13,13 +13,16 @@ public class ConsoleOutputDisplayHandler implements DisplayHandler<String> {
     @Override public void forageFailure(String cmdOrigin, long timeAvailable) {
         System.out.println(separator + "You can forage again in " + (timeAvailable - System.currentTimeMillis()/1000L) + " seconds.");
     }
-    @Override public void inventory(String cmdOrigin, Inventory inventory) {
+    @Override public void inventory(String cmdOrigin, long userid, Inventory inventory) {
         String seedsOutput = inventory.getSeeds().entrySet().stream().map(e -> e.getValue() + " " + e.getKey()).collect(Collectors.joining("\n"));
         System.out.println(separator + "Your Inventory\n" + seedsOutput);
     }
-    @Override public void garden(String cmdOrigin, Garden garden) {
+    @Override public void garden(String cmdOrigin, long userid, Garden garden) {
         String output = garden.getPlots().stream().map(p -> p.seed() + " " + (p.harvestableAt() - System.currentTimeMillis()/1000L)).collect(Collectors.joining("\n"));
         System.out.println(separator + "Your Garden\n" + output);
+    }
+    @Override public void plantSeedNotExistentFailure(String cmdOrigin) {
+        System.out.println(separator + "You must specify a valid seed.");
     }
     @Override public void plantSeedGardenFullFailure(String cmdOrigin) {
         System.out.println(separator + "You cannot plant anymore seeds in your garden — it's full!");

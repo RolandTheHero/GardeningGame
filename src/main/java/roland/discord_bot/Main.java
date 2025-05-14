@@ -23,15 +23,21 @@ public class Main {
         jda.addEventListener(new SlashCommandListener(
             new EchoCommand("echo"),
             new ForageCommand("forage"),
-            new InventoryCommand("inventory")
+            new InventoryCommand("inventory"),
+            new GardenCommand("garden"),
+            new PlantSeedCommand("plantseed")
         ));
-        //jda.addEventListener(new ButtonListeners());
+        jda.addEventListener(new SelectMenuListener());
         jda.updateCommands().addCommands(
             Commands.slash("echo", "Repeats your message back to you.")
                 .addOption(OptionType.STRING, "message", "The message to repeat."),
             Commands.slash("forage", "Look for seeds in the vicinity."),
-            Commands.slash("inventory", "View the seeds you've collected.")
-                .addOption(OptionType.USER, "user", "View you or another user's seed inventory.")
+            Commands.slash("inventory", "View you or another user's seed inventory.")
+                .addOption(OptionType.USER, "user", "The user to view."),
+            Commands.slash("garden", "View you or another user's garden.")
+                .addOption(OptionType.USER, "user", "The user to view."),
+            Commands.slash("plantseed", "Plant a seed into your garden.")
+                .addOption(OptionType.STRING, "seedtype", "The type of seed to plant. One of: \"common\", \"rare\", \"magical\"")
         ).queue();
     }
 }
