@@ -35,13 +35,3 @@ record GardenCommand(String name) implements SlashCommand {
         Main.gardeningGame.viewGarden(event, SlashCommand.getTargetUser(event));
     }
 }
-record PlantSeedCommand(String name) implements SlashCommand {
-    public void run(SlashCommandInteractionEvent event) {
-        var op = event.getOption("seedtype");
-        if (op == null) {
-            Main.gardeningGame.plantSeed(event, SlashCommand.getTargetUser(event), "");
-            return;
-        }
-        Main.gardeningGame.plantSeed(event, SlashCommand.getTargetUser(event), op.getAsString().toLowerCase());
-    }
-}

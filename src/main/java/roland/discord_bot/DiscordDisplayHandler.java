@@ -2,19 +2,24 @@ package roland.discord_bot;
 
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
-import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
+import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback;
+import net.dv8tion.jda.api.interactions.components.ActionRow;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu.Builder;
+
 import roland.games.gardening.DisplayHandler;
 import roland.games.gardening.Garden;
 import roland.games.gardening.Inventory;
 import roland.games.gardening.Plant;
 import roland.games.gardening.Seed;
 
-public class DiscordDisplayHandler implements DisplayHandler<SlashCommandInteractionEvent> {
+public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
     static private String formatUnixTime(long sec) {
         long min = sec/60;
         long hr = min/60;
@@ -29,9 +34,42 @@ public class DiscordDisplayHandler implements DisplayHandler<SlashCommandInterac
         else uptimeString += sec + " seconds.";
         return uptimeString;
     }
+    private MessageEmbed gardenEmbed(long userid, Garden garden) {
+        var plots = garden.getPlots();
+        String gardenMsgBox = plots.stream()
+            .map(p -> ":seedling: " + p.seed().fullName() + " · Ready <t:" + p.harvestableAt() + ":R>")
+            .collect(Collectors.joining("\n", "<@" + userid + ">'s garden\n\n", ""));
+        if (plots.isEmpty()) gardenMsgBox = "<@" + userid + "> has not planted any seeds.";
+        return new EmbedBuilder()
+            .setColor(Main.kaiboColor)
+            .setTitle("Garden")
+            .appendDescription(gardenMsgBox)
+            .build();
+    }
+    private StringSelectMenu gardenSeedSelectMenu(long userid) {
+        Builder ssm = StringSelectMenu.create("menu:plantseed:"+userid)
+            .setPlaceholder("Select seed to plant");
+        Main.gardeningGame.data().getInventory(userid).getSeeds().entrySet().stream()
+            .filter(e -> e.getValue() > 0)
+            .forEach(e -> ssm.addOption(e.getKey().fullName(), e.getKey().codeName(), "Owned: " + e.getValue(), Emoji.fromUnicode("U+1FAD8")));
+        if (ssm.getOptions().isEmpty()) ssm.addOption("No available seeds", "none", "Use the forage command to find some!");
+        return ssm.build();
+    }
+    private StringSelectMenu gardenHarvestSelectMenu(long userid) {
+        Builder ssm = StringSelectMenu.create("menu:harvestplant:"+userid)
+            .setPlaceholder("Select plant to harvest");
+        var garden = Main.gardeningGame.data().getGarden(userid);
+        int gardenSize = garden.size();
+        var plots = garden.getPlots();
+        IntStream.range(0, gardenSize)
+            .filter(i -> garden.canHarvest(i))
+            .forEach(i -> ssm.addOption(plots.get(i).seed().fullName(), i + "", "This plant is ready to be harvested!", Emoji.fromUnicode("U+1FAB4")));
+        if (ssm.getOptions().isEmpty()) ssm.addOption("No available plants", "-1", "Plant some seeds and wait for them to mature.");
+        return ssm.build();
+    }
 
     @Override
-    public void forageSuccess(SlashCommandInteractionEvent cmdOrigin, Map<Seed, Integer> foragedSeeds) {
+    public void forageSuccess(IReplyCallback cmdOrigin, Map<Seed, Integer> foragedSeeds) {
         String seedsMsgBox = foragedSeeds.entrySet().stream()
             .map(e -> "+" + e.getValue() + " " + e.getKey().fullName())
             .collect(Collectors.joining("\n", "```diff\n", "```"));
@@ -44,12 +82,12 @@ public class DiscordDisplayHandler implements DisplayHandler<SlashCommandInterac
     }
 
     @Override
-    public void forageFailure(SlashCommandInteractionEvent cmdOrigin, long timeAvailable) {
+    public void forageFailure(IReplyCallback cmdOrigin, long timeAvailable) {
         cmdOrigin.reply("You can forage again in " + formatUnixTime(timeAvailable - System.currentTimeMillis()/1000L)).queue();
     }
 
     @Override
-    public void inventory(SlashCommandInteractionEvent cmdOrigin, long userid, Inventory inventory) {
+    public void inventory(IReplyCallback cmdOrigin, long userid, Inventory inventory) {
         String seedsMsgBox = inventory.getSeeds().entrySet().stream()
             .map(e -> ":beans: " + e.getValue() + " · " + e.getKey().fullName())
             .collect(Collectors.joining("\n", "<@" + userid + ">'s seed inventory\n\n", ""));
@@ -63,80 +101,80 @@ public class DiscordDisplayHandler implements DisplayHandler<SlashCommandInterac
     }
 
     @Override
-    public void garden(SlashCommandInteractionEvent cmdOrigin, long userid, Garden garden) {
-        var plots = garden.getPlots();
-        String gardenMsgBox = plots.stream()
-            .map(p -> ":seedling: " + p.seed().fullName() + " · Harvestable in <t:" + p.harvestableAt() + ":R>")
-            .collect(Collectors.joining("\n", "<@" + userid + ">'s garden\n\n", ""));
-        if (plots.isEmpty()) gardenMsgBox = "<@" + userid + "> has not planted any seeds.";
-        MessageEmbed embed = new EmbedBuilder()
-            .setColor(Main.kaiboColor)
-            .setTitle("Garden")
-            .appendDescription(gardenMsgBox)
-            .build();
-        Builder ssm = StringSelectMenu.create("menu:plantseed")
-            .setPlaceholder("Select seed to plant")
-            .setRequiredRange(1, 1);
-        Main.gardeningGame.data().getInventory(userid).getSeeds().entrySet().stream()
-            .filter(e -> e.getValue() > 0)
-            .forEach(e -> ssm.addOption(e.getKey().fullName() + " (Owned: " + e.getValue() + ")", e.getKey().codeName()));
-        var reply = cmdOrigin.replyEmbeds(embed);
-        if (!ssm.getOptions().isEmpty()) reply.addActionRow(ssm.build());
-        reply.queue();
+    public void garden(IReplyCallback cmdOrigin, long userid, Garden garden) {
+        var reply = cmdOrigin.replyEmbeds(gardenEmbed(userid, garden));
+        reply.addActionRow(gardenSeedSelectMenu(userid))
+            .addActionRow(gardenHarvestSelectMenu(userid))
+            .queue();
     }
     
     @Override
-    public void plantSeedNotExistentFailure(SlashCommandInteractionEvent cmdOrigin) {
-        cmdOrigin.reply("Please specify a valid seed.").queue();
+    public void plantSeedNotExistentFailure(IReplyCallback cmdOrigin) {
+        if (cmdOrigin instanceof StringSelectInteractionEvent e) e.deferEdit().queue();
     }
 
     @Override
-    public void plantSeedNotEnoughFailure(SlashCommandInteractionEvent cmdOrigin, Seed seed) {
-        cmdOrigin.reply("You need to have at least one " + seed.fullName() + " to plant it.").queue();
+    public void plantSeedNotEnoughFailure(IReplyCallback cmdOrigin, Seed seed) {
+        if (cmdOrigin instanceof StringSelectInteractionEvent) {
+            cmdOrigin.reply("You need to have at least one " + seed.fullName() + " to plant it.").setEphemeral(true).queue();
+        }
     }
 
     @Override
-    public void plantSeedGardenFullFailure(SlashCommandInteractionEvent cmdOrigin) {
-        cmdOrigin.reply("You cannot plant anymore seeds in your garden — it's full!").queue();
+    public void plantSeedGardenFullFailure(IReplyCallback cmdOrigin) {
+        if (cmdOrigin instanceof StringSelectInteractionEvent) {
+            cmdOrigin.reply("You cannot plant anymore seeds in your garden — it's full!").setEphemeral(true).queue();
+        }
     }
 
     @Override
-    public void plantSeedSuccess(SlashCommandInteractionEvent cmdOrigin, Seed seed) {
-        cmdOrigin.reply("You planted a " + seed.fullName() + " in your garden.").queue();
+    public void plantSeedSuccess(IReplyCallback cmdOrigin, Seed seed) {
+        if (cmdOrigin instanceof StringSelectInteractionEvent e) {
+            long userid = cmdOrigin.getUser().getIdLong();
+            e.editMessageEmbeds(gardenEmbed(userid, Main.gardeningGame.data().getGarden(userid)))
+                .setComponents(
+                    ActionRow.of(gardenSeedSelectMenu(userid)),
+                    ActionRow.of(gardenHarvestSelectMenu(userid))
+                ).queue();
+        }
     }
 
     @Override
-    public void harvestNotReadyFailure(SlashCommandInteractionEvent cmdOrigin, int plotNum) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'harvestNotReadyFailure'");
+    public void harvestNotReadyFailure(IReplyCallback cmdOrigin, int plotNum) {
+        throw new UnsupportedOperationException("The 'harvestNotReadyFailure' method is uncallable.");
     }
 
     @Override
-    public void harvestEmptyFailure(SlashCommandInteractionEvent cmdOrigin, int plotNum) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'harvestEmptyFailure'");
+    public void harvestEmptyFailure(IReplyCallback cmdOrigin, int plotNum) {
+        if (cmdOrigin instanceof StringSelectInteractionEvent e) e.deferEdit().queue();
     }
 
     @Override
-    public void harvestSuccess(SlashCommandInteractionEvent cmdOrigin, Seed seed, Plant harvestedPlant) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'harvestSuccess'");
+    public void harvestSuccess(IReplyCallback cmdOrigin, Seed seed, Plant harvestedPlant) {
+        if (cmdOrigin instanceof StringSelectInteractionEvent e) {
+            long userid = cmdOrigin.getUser().getIdLong();
+            e.editMessageEmbeds(gardenEmbed(userid, Main.gardeningGame.data().getGarden(userid)))
+                .setComponents(
+                    ActionRow.of(gardenSeedSelectMenu(userid)),
+                    ActionRow.of(gardenHarvestSelectMenu(userid))
+                ).queue();
+        }
     }
 
     @Override
-    public void plant(SlashCommandInteractionEvent cmdOrigin, Plant plant) {
+    public void plant(IReplyCallback cmdOrigin, Plant plant) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'plant'");
     }
 
     @Override
-    public void plantNonExistentFailure(SlashCommandInteractionEvent cmdOrigin, String code) {
+    public void plantNonExistentFailure(IReplyCallback cmdOrigin, String code) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'plantNonExistentFailure'");
     }
 
     @Override
-    public void plants(SlashCommandInteractionEvent cmdOrigin, long userid, Map<String, Plant> plants, int page) {
+    public void plants(IReplyCallback cmdOrigin, long userid, Map<String, Plant> plants, int page) {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'plants'");
     }

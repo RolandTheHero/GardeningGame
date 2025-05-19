@@ -5,7 +5,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 
 public class Garden {
-    public record Plot(Seed seed, long harvestableAt) {}
+    public record Plot(Seed seed, long harvestableAt) {
+        public boolean canHarvest() { return Utility.currentTime() >= harvestableAt; }
+    }
 
     private int size;
     private List<Plot> growingPlants;
@@ -25,8 +27,8 @@ public class Garden {
         if (isFull()) throw new Error();
         growingPlants.add(new Plot(seed, Utility.currentTime() + seed.growthTime()));
     }
-    public boolean plotOccupied(int plotNum) { return growingPlants.size() > plotNum; }
-    public boolean canHarvest(int plotNum) { return plotOccupied(plotNum) && Utility.currentTime() >= growingPlants.get(plotNum).harvestableAt(); }
+    public boolean plotOccupied(int plotNum) { return 0 <= plotNum && plotNum < growingPlants.size(); }
+    public boolean canHarvest(int plotNum) { return plotOccupied(plotNum) && growingPlants.get(plotNum).canHarvest(); }
     public Plant harvest(int plotNum) {
         if (!canHarvest(plotNum)) throw new Error();
         return growingPlants.remove(plotNum).seed().grow();
