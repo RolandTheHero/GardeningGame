@@ -18,6 +18,7 @@ import roland.games.gardening.Garden;
 import roland.games.gardening.Inventory;
 import roland.games.gardening.Plant;
 import roland.games.gardening.Seed;
+import roland.games.gardening.Trait;
 
 public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
     static private String formatUnixTime(long sec) {
@@ -47,7 +48,7 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
             .build();
     }
     private StringSelectMenu gardenSeedSelectMenu(long userid) {
-        Builder ssm = StringSelectMenu.create("menu:plantseed:"+userid)
+        Builder ssm = StringSelectMenu.create("plantseed:"+userid)
             .setPlaceholder("Select seed to plant");
         Main.gardeningGame.data().getInventory(userid).getSeeds().entrySet().stream()
             .filter(e -> e.getValue() > 0)
@@ -56,7 +57,7 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
         return ssm.build();
     }
     private StringSelectMenu gardenHarvestSelectMenu(long userid) {
-        Builder ssm = StringSelectMenu.create("menu:harvestplant:"+userid)
+        Builder ssm = StringSelectMenu.create("harvestplant:"+userid)
             .setPlaceholder("Select plant to harvest");
         var garden = Main.gardeningGame.data().getGarden(userid);
         int gardenSize = garden.size();
@@ -163,14 +164,23 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
 
     @Override
     public void plant(IReplyCallback cmdOrigin, Plant plant) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'plant'");
+        String traitsString = "";
+        for (Trait trait : plant.traits()) {
+            traitsString += trait.name();
+        }
+        MessageEmbed embed = new EmbedBuilder()
+            .setColor(Main.kaiboColor)
+            .setTitle("Plant Information")
+            .appendDescription(String.format("Code · `%s`\nOwned by <@%d>\nAcquired on <t:%d:f>\n\n", plant.code(), plant.ownerid(), plant.acquisitionTime()))
+            .appendDescription(String.format("Name · %s\nColour · %s\n\n", plant.name(), plant.colour().toString()))
+            .appendDescription("**Traits**\n" + traitsString)
+            .build();
+        cmdOrigin.replyEmbeds(embed).queue();
     }
 
     @Override
     public void plantNonExistentFailure(IReplyCallback cmdOrigin, String code) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'plantNonExistentFailure'");
+        cmdOrigin.reply("You must provide a valid plant code!").setEphemeral(true).queue();
     }
 
     @Override

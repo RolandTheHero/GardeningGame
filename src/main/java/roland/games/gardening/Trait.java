@@ -6,7 +6,7 @@ enum TraitRarity {
     MAGICAL;
 }
 
-interface Trait {
+public interface Trait {
     public String name();
     public TraitRarity rarity();
 }

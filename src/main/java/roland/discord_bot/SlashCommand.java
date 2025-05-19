@@ -35,3 +35,12 @@ record GardenCommand(String name) implements SlashCommand {
         Main.gardeningGame.viewGarden(event, SlashCommand.getTargetUser(event));
     }
 }
+record ViewPlantCommand(String name) implements SlashCommand {
+    public void run(SlashCommandInteractionEvent event) {
+        var op = event.getOption("code");
+        String code;
+        if (op == null) code = "";
+        else code = op.getAsString();
+        Main.gardeningGame.viewPlant(event, code);
+    }
+}

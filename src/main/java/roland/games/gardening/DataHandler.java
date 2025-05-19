@@ -12,6 +12,7 @@ public interface DataHandler {
     public Cooldowns getCooldowns(long userid);
     public Inventory getInventory(long userid);
     public Garden getGarden(long userid);
+    public String nextPlantCode();
 
     default public void addToInventory(long userid, Map<Seed, Integer> seeds) {
         if (getInventory(userid) == null) addUser(userid);

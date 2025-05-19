@@ -11,3 +11,8 @@ record PlantSeedMenu(String name) implements SelectMenu {
         
     }
 }
+record HarvestPlantMenu(String name) implements SelectMenu {
+    public void run(StringSelectInteractionEvent event) {
+        
+    }
+}

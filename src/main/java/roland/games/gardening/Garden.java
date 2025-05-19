@@ -29,9 +29,9 @@ public class Garden {
     }
     public boolean plotOccupied(int plotNum) { return 0 <= plotNum && plotNum < growingPlants.size(); }
     public boolean canHarvest(int plotNum) { return plotOccupied(plotNum) && growingPlants.get(plotNum).canHarvest(); }
-    public Plant harvest(int plotNum) {
+    public Plant harvest(int plotNum, String code) {
         if (!canHarvest(plotNum)) throw new Error();
-        return growingPlants.remove(plotNum).seed().grow();
+        return growingPlants.remove(plotNum).seed().grow(code);
     }
     public Seed getSeed(int plotNum) {
         if (!plotOccupied(plotNum)) throw new Error();

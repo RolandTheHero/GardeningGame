@@ -71,7 +71,8 @@ public record GardeningGame<T>(DataHandler data, DisplayHandler<T> display) {
             return;
         }
         Seed fromSeed = garden.getSeed(plotNum);
-        Plant harvestedPlant = data.getGarden(userid).harvest(plotNum);
+        Plant harvestedPlant = data.getGarden(userid).harvest(plotNum, data.nextPlantCode());
+        harvestedPlant.setOwner(userid);
         data.save(harvestedPlant);
         display.harvestSuccess(cmdOrigin, fromSeed, harvestedPlant);
     }
