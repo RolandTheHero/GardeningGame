@@ -37,8 +37,7 @@ public class ConsoleOutputDisplayHandler implements DisplayHandler<String> {
         System.out.println(separator + plantNoSeparator(plant));
     }
     private String plantNoSeparator(Plant plant) {
-        return plant.name() + 
-            "\nCode: " + plant.code() +
+        return "Code: " + plant.code() +
             "\nOwner: " + plant.ownerid() +
             "\nAcquisition Date: " + plant.acquisitionTime() + 
             "\nColour: " + plant.colour() + 
@@ -47,7 +46,7 @@ public class ConsoleOutputDisplayHandler implements DisplayHandler<String> {
     private String plants(Map<String, Plant> plants) {
         return plants.entrySet().stream().map(e -> {
             Plant p = e.getValue();
-            return p.code() + " " + p.name() + " " + p.traits();
+            return p.code() + " " + p.traits();
         }).collect(Collectors.joining("\n"));
     }
     @Override public void plants(String cmdOrigin, long userid, Map<String, Plant> plants, int page) {

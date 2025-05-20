@@ -13,6 +13,7 @@ public interface DataHandler {
     public Inventory getInventory(long userid);
     public Garden getGarden(long userid);
     public String nextPlantCode();
+    public Trait randomTrait();
 
     default public void addToInventory(long userid, Map<Seed, Integer> seeds) {
         if (getInventory(userid) == null) addUser(userid);

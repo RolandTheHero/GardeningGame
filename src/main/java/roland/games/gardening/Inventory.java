@@ -11,8 +11,10 @@ public class Inventory {
     
     public void addSeeds(Map<Seed, Integer> seeds) {
         for (Map.Entry<Seed, Integer> e : seeds.entrySet()) {
-            if (this.seeds.get(e.getKey()) == null) this.seeds.put(e.getKey(), 0);
-            this.seeds.put(e.getKey(), this.seeds.get(e.getKey()) + e.getValue());
+            Seed seed = e.getKey();
+            if (this.seeds.get(seed) == null) this.seeds.put(seed, 0);
+            this.seeds.put(seed, this.seeds.get(seed) + e.getValue());
+            if (this.seeds.get(seed) == 0) this.seeds.remove(seed);
         }
     }
     public String toString() {

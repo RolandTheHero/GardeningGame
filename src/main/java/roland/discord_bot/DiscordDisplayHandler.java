@@ -172,8 +172,8 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
         MessageEmbed embed = new EmbedBuilder()
             .setColor(plant.colour())
             .setTitle("Plant Information")
-            .appendDescription(String.format("Code · `%s`\nOwned by <@%d>\nAcquired on <t:%d:f>\n\n", plant.code(), plant.ownerid(), plant.acquisitionTime()))
-            .appendDescription(String.format("Name · %s\nColour · %s\n\n", plant.name(), plant.colour().toString()))
+            .appendDescription(String.format("Code · `%s`\nOwned by <@%d>\nAcquired on <t:%d:f>\n", plant.code(), plant.ownerid(), plant.acquisitionTime()))
+            .appendDescription(String.format("Colour · R=%d, G=%d, B=%d\n\n", plant.colour().getRed(), plant.colour().getGreen(), plant.colour().getBlue()))
             .appendDescription("**Traits**\n" + traitsString)
             .build();
         cmdOrigin.replyEmbeds(embed).queue();
@@ -197,6 +197,7 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
             .setColor(Main.kaiboColor)
             .setTitle("Plant Inventory")
             .appendDescription(String.format("<@%d>'s plants\n\n%s", userid, plantsDisplayed))
+            .setFooter(String.format("Showing %d-%d of %d", 0, 0, 0))
             .build();
         cmdOrigin.replyEmbeds(embed).queue();
     }
