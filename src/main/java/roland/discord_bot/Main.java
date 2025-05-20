@@ -21,26 +21,26 @@ public class Main {
             .build();
         
         jda.addEventListener(new SlashCommandListener(
-            new EchoCommand("echo"),
             new ForageCommand("forage"),
             new InventoryCommand("inventory"),
             new GardenCommand("garden"),
-            new ViewPlantCommand("viewplant")
+            new ViewPlantCommand("viewplant"),
+            new ViewPlantInventory("plantinventory")
         ));
         jda.addEventListener(new SelectMenuListener(
             new PlantSeedMenu("plantseed"),
             new HarvestPlantMenu("harvestseed")
         ));
         jda.updateCommands().addCommands(
-            Commands.slash("echo", "Repeats your message back to you.")
-                .addOption(OptionType.STRING, "message", "The message to repeat."),
             Commands.slash("forage", "Look for seeds in the vicinity."),
             Commands.slash("inventory", "View you or another user's seed inventory.")
                 .addOption(OptionType.USER, "user", "The user to view."),
             Commands.slash("garden", "View you or another user's garden.")
                 .addOption(OptionType.USER, "user", "The user to view."),
             Commands.slash("viewplant", "View details about a plant.")
-                .addOption(OptionType.STRING, "code", "The code of the plant to view.")
+                .addOption(OptionType.STRING, "code", "The code of the plant to view."),
+            Commands.slash("plantinventory", "View all the plants belonging to a user.")
+                .addOption(OptionType.USER, "user", "The user to view.")
         ).queue();
     }
 }

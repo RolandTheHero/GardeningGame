@@ -1,5 +1,6 @@
 package roland.discord_bot;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -18,9 +19,9 @@ import roland.games.gardening.Garden;
 import roland.games.gardening.Inventory;
 import roland.games.gardening.Plant;
 import roland.games.gardening.Seed;
-import roland.games.gardening.Trait;
 
 public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
+    static private final int PLANT_DISPLAY_PAGE_SIZE = 10;
     static private String formatUnixTime(long sec) {
         long min = sec/60;
         long hr = min/60;
@@ -90,6 +91,7 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
     @Override
     public void inventory(IReplyCallback cmdOrigin, long userid, Inventory inventory) {
         String seedsMsgBox = inventory.getSeeds().entrySet().stream()
+            .filter(e -> e.getValue() > 0)
             .map(e -> ":beans: " + e.getValue() + " · " + e.getKey().fullName())
             .collect(Collectors.joining("\n", "<@" + userid + ">'s seed inventory\n\n", ""));
         if (inventory.getSeeds().isEmpty()) seedsMsgBox = "<@" + userid + "> does not have any seeds.";
@@ -164,12 +166,11 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
 
     @Override
     public void plant(IReplyCallback cmdOrigin, Plant plant) {
-        String traitsString = "";
-        for (Trait trait : plant.traits()) {
-            traitsString += trait.name();
-        }
+        String traitsString = Arrays.stream(plant.traits())
+            .map(trait -> trait.name())
+            .collect(Collectors.joining("`,`", "`", "`"));
         MessageEmbed embed = new EmbedBuilder()
-            .setColor(Main.kaiboColor)
+            .setColor(plant.colour())
             .setTitle("Plant Information")
             .appendDescription(String.format("Code · `%s`\nOwned by <@%d>\nAcquired on <t:%d:f>\n\n", plant.code(), plant.ownerid(), plant.acquisitionTime()))
             .appendDescription(String.format("Name · %s\nColour · %s\n\n", plant.name(), plant.colour().toString()))
@@ -185,8 +186,19 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
 
     @Override
     public void plants(IReplyCallback cmdOrigin, long userid, Map<String, Plant> plants, int page) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'plants'");
+        String plantsDisplayed = plants.entrySet().stream()
+            .filter(e -> e.getValue().ownerid() == userid)
+            .skip(PLANT_DISPLAY_PAGE_SIZE * page)
+            .limit(PLANT_DISPLAY_PAGE_SIZE)
+            .map(e -> String.format("`%s` · %s", e.getKey(),
+                Arrays.stream(e.getValue().traits()).map(trait -> trait.name()).collect(Collectors.joining(",", "`", "`")))
+            ).collect(Collectors.joining("\n"));
+        MessageEmbed embed = new EmbedBuilder()
+            .setColor(Main.kaiboColor)
+            .setTitle("Plant Inventory")
+            .appendDescription(String.format("<@%d>'s plants\n\n%s", userid, plantsDisplayed))
+            .build();
+        cmdOrigin.replyEmbeds(embed).queue();
     }
     
 }

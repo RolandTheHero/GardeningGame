@@ -44,3 +44,8 @@ record ViewPlantCommand(String name) implements SlashCommand {
         Main.gardeningGame.viewPlant(event, code);
     }
 }
+record ViewPlantInventory(String name) implements SlashCommand {
+    public void run(SlashCommandInteractionEvent event) {
+        Main.gardeningGame.plantInventory(event, SlashCommand.getTargetUser(event), 0);
+    }
+}
