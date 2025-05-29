@@ -105,7 +105,16 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
 
     @Override
     public void garden(IReplyCallback cmdOrigin, long userid, Garden garden) {
-        var reply = cmdOrigin.replyEmbeds(gardenEmbed(userid, garden));
+        MessageEmbed embed = gardenEmbed(userid, garden);
+        if (cmdOrigin instanceof StringSelectInteractionEvent e) {
+            e.editMessageEmbeds(embed)
+                .setComponents(
+                    ActionRow.of(gardenSeedSelectMenu(userid)),
+                    ActionRow.of(gardenHarvestSelectMenu(userid))
+                ).queue();
+            return;
+        }
+        var reply = cmdOrigin.replyEmbeds(embed);
         reply.addActionRow(gardenSeedSelectMenu(userid))
             .addActionRow(gardenHarvestSelectMenu(userid))
             .queue();
@@ -132,14 +141,9 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
 
     @Override
     public void plantSeedSuccess(IReplyCallback cmdOrigin, Seed seed) {
-        if (cmdOrigin instanceof StringSelectInteractionEvent e) {
-            long userid = cmdOrigin.getUser().getIdLong();
-            e.editMessageEmbeds(gardenEmbed(userid, Main.gardeningGame.data().getGarden(userid)))
-                .setComponents(
-                    ActionRow.of(gardenSeedSelectMenu(userid)),
-                    ActionRow.of(gardenHarvestSelectMenu(userid))
-                ).queue();
-        }
+        long userid = cmdOrigin.getUser().getIdLong();
+        Garden garden = Main.gardeningGame.data().getGarden(userid);
+        garden(cmdOrigin, userid, garden);
     }
 
     @Override
@@ -154,14 +158,22 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
 
     @Override
     public void harvestSuccess(IReplyCallback cmdOrigin, Seed seed, Plant harvestedPlant) {
-        if (cmdOrigin instanceof StringSelectInteractionEvent e) {
-            long userid = cmdOrigin.getUser().getIdLong();
-            e.editMessageEmbeds(gardenEmbed(userid, Main.gardeningGame.data().getGarden(userid)))
-                .setComponents(
-                    ActionRow.of(gardenSeedSelectMenu(userid)),
-                    ActionRow.of(gardenHarvestSelectMenu(userid))
-                ).queue();
-        }
+        long userid = cmdOrigin.getUser().getIdLong();
+        Garden garden = Main.gardeningGame.data().getGarden(userid);
+        garden(cmdOrigin, userid, garden);
+
+        String traitsString = Arrays.stream(harvestedPlant.traits())
+            .map(trait -> trait.name())
+            .collect(Collectors.joining("`,`", "`", "`"));
+        MessageEmbed embed = new EmbedBuilder()
+            .setColor(harvestedPlant.colour())
+            .setTitle("New Plant Obtained")
+            .appendDescription(String.format("<@%d> just harvested:\n\n", userid))
+            .appendDescription(String.format("Code · `%s`\n", harvestedPlant.code()))
+            .appendDescription(String.format("Colour · %d, %d, %d\n\n", harvestedPlant.colour().getRed(), harvestedPlant.colour().getGreen(), harvestedPlant.colour().getBlue()))
+            .appendDescription("**Traits**\n" + traitsString)
+            .build();
+        cmdOrigin.getHook().sendMessageEmbeds(embed).queue();
     }
 
     @Override
@@ -173,7 +185,7 @@ public class DiscordDisplayHandler implements DisplayHandler<IReplyCallback> {
             .setColor(plant.colour())
             .setTitle("Plant Information")
             .appendDescription(String.format("Code · `%s`\nOwned by <@%d>\nAcquired on <t:%d:f>\n", plant.code(), plant.ownerid(), plant.acquisitionTime()))
-            .appendDescription(String.format("Colour · R=%d, G=%d, B=%d\n\n", plant.colour().getRed(), plant.colour().getGreen(), plant.colour().getBlue()))
+            .appendDescription(String.format("Colour · %d, %d, %d\n\n", plant.colour().getRed(), plant.colour().getGreen(), plant.colour().getBlue()))
             .appendDescription("**Traits**\n" + traitsString)
             .build();
         cmdOrigin.replyEmbeds(embed).queue();
